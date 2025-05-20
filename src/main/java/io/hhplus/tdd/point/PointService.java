@@ -14,14 +14,23 @@ public class PointService {
 
     /**
      * User의 포인트를 충전한다.
-     * @param id
+     * @param userId
      * @param point
      * @return
      */
-    public UserPoint chargePoint(Long id, Long point) {
-        UserPoint userPoint = userPointTable.selectById(id);
+    public UserPoint chargePoint(Long userId, Long point) {
+        UserPoint userPoint = userPointTable.selectById(userId);
         pointHistoryTable.insert(userPoint.id(), point, TransactionType.CHARGE, System.currentTimeMillis());
         return userPointTable.insertOrUpdate(userPoint.id(), point);
+    }
+
+    /**
+     * User의 포인트를 조회한다.
+     * @param userId
+     * @return
+     */
+    public UserPoint getUserPoint(Long userId) {
+        return userPointTable.selectById(userId);
     }
 
 
