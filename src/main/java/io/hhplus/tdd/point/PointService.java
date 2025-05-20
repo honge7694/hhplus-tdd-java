@@ -5,6 +5,8 @@ import io.hhplus.tdd.database.UserPointTable;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class PointService {
@@ -33,5 +35,12 @@ public class PointService {
         return userPointTable.selectById(userId);
     }
 
-
+    /**
+     * User의 포인트 내역을 조호한다.
+     * @param userId
+     * @return
+     */
+    public List<PointHistory> getUserPointHistory(Long userId) {
+        return pointHistoryTable.selectAllByUserId(userId);
+    }
 }

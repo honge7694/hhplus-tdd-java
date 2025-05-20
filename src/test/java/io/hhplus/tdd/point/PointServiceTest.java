@@ -11,6 +11,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
+
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -89,5 +91,23 @@ public class PointServiceTest {
         // then
         Assertions.assertThat(selectedUser.point()).isEqualTo(chargePoint);
         verify(userPointTable).selectById(userId);
+    }
+
+    @Test
+    @DisplayName("[포인트 조회] - 포인트 내역을 조회한다.")
+    public void getUserPointHistory() {
+        // given
+        PointHistory pointHistory = new PointHistory(1, userId, chargePoint, TransactionType.CHARGE, fixedTime);
+
+        when(pointHistoryTable.selectAllByUserId(userId))
+                .thenReturn(List.of(pointHistory));
+
+        // when
+        List<PointHistory> pointHistoryList = pointService.getUserPointHistory(userId);
+
+        // then
+        Assertions.assertThat(pointHistoryList.get(0).type()).isEqualTo(TransactionType.CHARGE);
+        Assertions.assertThat(pointHistoryList.get(0).amount()).isEqualTo(chargePoint);
+        verify(pointHistoryTable).selectAllByUserId(userId);
     }
 }
