@@ -11,6 +11,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -24,7 +26,6 @@ public class PointServiceTest {
     @Mock
     private PointHistoryTable pointHistoryTable;
 
-    private UserPoint user;
     private Long userId;
     private Long chargePoint;
     private long fixedTime;
@@ -34,7 +35,6 @@ public class PointServiceTest {
         // 반복되는 초기화 코드를 줄이기 위해 @BeforeEach 사용
         userId = 1L;
         chargePoint = 100L;
-        user = UserPoint.empty(userId);
         fixedTime = System.currentTimeMillis();
     }
 
@@ -42,6 +42,8 @@ public class PointServiceTest {
     @DisplayName("[포인트 충전] - 포인트를 충전한다.")
     public void chargeUserPoint() throws Exception {
         // given
+        UserPoint user = UserPoint.empty(userId);
+
         when(userPointTable.selectById(userId)).thenReturn(user);
         when(userPointTable.insertOrUpdate(user.id(), chargePoint))
                 .thenReturn(new UserPoint(userId, chargePoint, System.currentTimeMillis()));
@@ -58,15 +60,19 @@ public class PointServiceTest {
     @DisplayName("[포인트 충전] - 포인트 히스토리를 저장한다.")
     public void chargeUserPointHistory() {
         // given
-        when(pointHistoryTable.insert(userId, chargePoint, TransactionType.CHARGE, fixedTime))
+        UserPoint user = UserPoint.empty(userId);
+
+        when(userPointTable.selectById(userId)).thenReturn(user);
+        when(pointHistoryTable.insert(eq(userId), eq(chargePoint), eq(TransactionType.CHARGE), anyLong()))
                 .thenReturn(new PointHistory(1, userId, chargePoint, TransactionType.CHARGE, fixedTime));
+        when(userPointTable.insertOrUpdate(userId, chargePoint))
+                .thenReturn(new UserPoint(chargePoint, chargePoint, fixedTime));
 
         // when
-        PointHistory userPointHistory = pointHistoryTable.insert(userId, chargePoint, TransactionType.CHARGE, fixedTime);
+        pointService.chargePoint(userId, chargePoint);
 
         // then
-        Assertions.assertThat(userPointHistory.amount()).isEqualTo(100L);
-        verify(pointHistoryTable).insert(userId, chargePoint, TransactionType.CHARGE, fixedTime);
+        verify(pointHistoryTable).insert(eq(userId), eq(chargePoint), eq(TransactionType.CHARGE), anyLong());
     }
 
     @Test
