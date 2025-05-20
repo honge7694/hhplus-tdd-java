@@ -84,7 +84,7 @@ public class PointServiceTest {
         when(userPointTable.selectById(userId)).thenReturn(point);
 
         // when
-        UserPoint selectedUser = userPointTable.selectById(userId);
+        UserPoint selectedUser = pointService.getUserPoint(userId);
 
         // then
         Assertions.assertThat(selectedUser.point()).isEqualTo(chargePoint);
