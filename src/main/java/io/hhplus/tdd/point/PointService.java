@@ -36,11 +36,23 @@ public class PointService {
     }
 
     /**
-     * User의 포인트 내역을 조호한다.
+     * User의 포인트 내역을 조회한다.
      * @param userId
      * @return
      */
     public List<PointHistory> getUserPointHistory(Long userId) {
         return pointHistoryTable.selectAllByUserId(userId);
+    }
+
+    /**
+     * 포인트를 사용한다.
+     * @param userId
+     * @param amountPoint
+     * @return
+     */
+    public UserPoint useUserPoint(Long userId, long amountPoint) {
+        UserPoint user = userPointTable.selectById(userId);
+        pointHistoryTable.insert(user.id(), amountPoint, TransactionType.USE, System.currentTimeMillis());
+        return userPointTable.insertOrUpdate(user.id(), amountPoint);
     }
 }

@@ -110,4 +110,21 @@ public class PointServiceTest {
         Assertions.assertThat(pointHistoryList.get(0).amount()).isEqualTo(chargePoint);
         verify(pointHistoryTable).selectAllByUserId(userId);
     }
+
+    @Test
+    @DisplayName("[포인트 사용] - 포인트를 사용한다.")
+    public void useUserPoint() {
+        // given
+        UserPoint userPoint = new UserPoint(userId, chargePoint, fixedTime);
+
+        when(userPointTable.selectById(userId)).thenReturn(userPoint);
+        when(userPointTable.insertOrUpdate(userId, -100L)).thenReturn(new UserPoint(userId, 0, fixedTime));
+
+        // when
+        UserPoint usePoint = pointService.useUserPoint(userId, -100L);
+
+        // then
+        Assertions.assertThat(usePoint.point()).isEqualTo(0L);
+        verify(userPointTable).insertOrUpdate(userId, -100L);
+    }
 }
