@@ -127,4 +127,21 @@ public class PointServiceTest {
         Assertions.assertThat(usePoint.point()).isEqualTo(0L);
         verify(userPointTable).insertOrUpdate(userId, -100L);
     }
+
+    @Test
+    @DisplayName("[포인트 사용] - 포인트 히스토리를 저장한다.")
+    public void useUserPointHistory() {
+        // given
+        UserPoint userPoint = new UserPoint(userId, chargePoint, fixedTime);
+
+        when(userPointTable.selectById(userId)).thenReturn(userPoint);
+        when(pointHistoryTable.insert(eq(userId), eq(-100L), eq(TransactionType.USE), anyLong()))
+                .thenReturn(new PointHistory(1, userId, -100L, TransactionType.USE, fixedTime));
+
+        // when
+        pointService.useUserPoint(userId, -100L);
+
+        // then
+        verify(pointHistoryTable).insert(eq(userId), eq(-100L), eq(TransactionType.USE), anyLong());
+    }
 }
