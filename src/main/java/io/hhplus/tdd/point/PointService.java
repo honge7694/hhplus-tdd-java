@@ -1,7 +1,9 @@
 package io.hhplus.tdd.point;
 
+import io.hhplus.tdd.ErrorResponse;
 import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
+import io.hhplus.tdd.error.BadRequestException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -52,6 +54,9 @@ public class PointService {
      */
     public UserPoint useUserPoint(Long userId, long amountPoint) {
         UserPoint user = userPointTable.selectById(userId);
+        if (user.point() < amountPoint) {
+            throw new BadRequestException("포인트가 부족합니다.");
+        }
         pointHistoryTable.insert(user.id(), amountPoint, TransactionType.USE, System.currentTimeMillis());
         return userPointTable.insertOrUpdate(user.id(), amountPoint);
     }
