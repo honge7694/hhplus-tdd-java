@@ -16,7 +16,7 @@ public record UserPoint(
     }
 
     public UserPoint isValidChargePoint(long amount) {
-        if (100000 > (point + amount)) {
+        if ((point + amount) > 100000) {
             throw new InvalidPointException("최대 포인트는 100,000 입니다.");
         }
         return new UserPoint(id, point + amount, System.currentTimeMillis());

@@ -136,14 +136,14 @@ public class PointServiceTest {
         UserPoint userPoint = new UserPoint(userId, chargePoint, fixedTime);
 
         when(userPointTable.selectById(userId)).thenReturn(userPoint);
-        when(pointHistoryTable.insert(eq(userId), eq(-100L), eq(TransactionType.USE), anyLong()))
-                .thenReturn(new PointHistory(1, userId, -100L, TransactionType.USE, fixedTime));
+        when(pointHistoryTable.insert(eq(userId), eq(100L), eq(TransactionType.USE), anyLong()))
+                .thenReturn(new PointHistory(1, userId, 100L, TransactionType.USE, fixedTime));
 
         // when
-        pointService.useUserPoint(userId, -100L);
+        pointService.useUserPoint(userId, 100L);
 
         // then
-        verify(pointHistoryTable).insert(eq(userId), eq(-100L), eq(TransactionType.USE), anyLong());
+        verify(pointHistoryTable).insert(eq(userId), eq(100L), eq(TransactionType.USE), anyLong());
     }
 
     @Test
@@ -159,5 +159,20 @@ public class PointServiceTest {
             pointService.useUserPoint(userPoint.id(), 200L))
                 .isInstanceOf(InvalidPointException.class)
                 .hasMessage("포인트가 부족합니다.");
+    }
+
+    @Test
+    @DisplayName("[포인트 충전] - 포인트 충전 실패한다.")
+    public void failToChargeUserPoint() {
+        // given
+        UserPoint userPoint = new UserPoint(userId, 99000L, fixedTime);
+
+        when(userPointTable.selectById(userId)).thenReturn(userPoint);
+
+        // when & then
+        Assertions.assertThatThrownBy(() ->
+            pointService.chargePoint(userId, 10000L))
+                .isInstanceOf(InvalidPointException.class)
+                .hasMessage("최대 포인트는 100,000 입니다.");
     }
 }
