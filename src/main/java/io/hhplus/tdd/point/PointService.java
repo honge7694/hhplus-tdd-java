@@ -60,9 +60,13 @@ public class PointService {
      * @return
      */
     public UserPoint useUserPoint(Long userId, long amountPoint) {
-        UserPoint user = userPointTable.selectById(userId);
-        UserPoint updated = user.isValidUsePoint(amountPoint);
-        pointHistoryTable.insert(user.id(), amountPoint, TransactionType.USE, System.currentTimeMillis());
-        return userPointTable.insertOrUpdate(user.id(), updated.point());
+        Object lock = userLocks.computeIfAbsent(userId, k -> new Object());
+
+        synchronized (lock) {
+            UserPoint user = userPointTable.selectById(userId);
+            UserPoint updated = user.isValidUsePoint(amountPoint);
+            pointHistoryTable.insert(user.id(), amountPoint, TransactionType.USE, System.currentTimeMillis());
+            return userPointTable.insertOrUpdate(user.id(), updated.point());
+        }
     }
 }

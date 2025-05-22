@@ -34,6 +34,7 @@ class PointServiceIntegrationTest {
     @BeforeEach
     void setUp() {
         userPointTable.selectById(2L);
+        userPointTable.insertOrUpdate(3L, 10000L);
     }
 
     @Test
@@ -64,5 +65,35 @@ class PointServiceIntegrationTest {
 
         UserPoint user = userPointTable.selectById(2L);
         Assertions.assertThat(user.point()).isEqualTo(10000L);
+    }
+
+    @Test
+    @DisplayName("[동시성 제어] - 포인트 충전")
+    public void useUserPointConcurrently() throws InterruptedException {
+        int threadCount = 100;
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch threadLatch = new CountDownLatch(threadCount);
+        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
+
+        for (int i = 0; i < threadCount; i++) {
+            futures.add(CompletableFuture.runAsync(() -> { // 리턴값 없는 비동기 실행
+                try {
+                    startLatch.await();
+                    pointService.useUserPoint(3L, 100L);
+                } catch (Exception e) {
+                    System.out.println("error = " + e);
+                    e.printStackTrace();
+                } finally {
+                    threadLatch.countDown();
+                }
+            }, executorService));
+        }
+
+        startLatch.countDown(); // 모든 스레드 시작
+        threadLatch.await(); // 모두 끝날 때까지 대기
+
+        UserPoint user = userPointTable.selectById(3L);
+        Assertions.assertThat(user.point()).isEqualTo(0L);
     }
 }
