@@ -12,7 +12,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -39,6 +44,7 @@ public class PointServiceTest {
         userId = 1L;
         chargePoint = 100L;
         fixedTime = System.currentTimeMillis();
+        userPointTable.insertOrUpdate(2L, 0L);
     }
 
     @Test
@@ -119,14 +125,14 @@ public class PointServiceTest {
         UserPoint userPoint = new UserPoint(userId, chargePoint, fixedTime);
 
         when(userPointTable.selectById(userId)).thenReturn(userPoint);
-        when(userPointTable.insertOrUpdate(userId, -100L)).thenReturn(new UserPoint(userId, 0, fixedTime));
+        when(userPointTable.insertOrUpdate(userId, 0L)).thenReturn(new UserPoint(userId, 0L, fixedTime));
 
         // when
-        UserPoint usePoint = pointService.useUserPoint(userId, -100L);
+        UserPoint usePoint = pointService.useUserPoint(userId, 100L);
 
         // then
         Assertions.assertThat(usePoint.point()).isEqualTo(0L);
-        verify(userPointTable).insertOrUpdate(userId, -100L);
+        verify(userPointTable).insertOrUpdate(userId, 0L);
     }
 
     @Test
@@ -174,5 +180,36 @@ public class PointServiceTest {
             pointService.chargePoint(userId, 10000L))
                 .isInstanceOf(InvalidPointException.class)
                 .hasMessage("최대 포인트는 100,000 입니다.");
+    }
+
+    @Test
+    @DisplayName("[동시성 제어] - 포인트 충전")
+    public void chargePointConcurrently() throws InterruptedException {
+        int threadCount = 10;
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch threadLatch = new CountDownLatch(threadCount);
+        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
+
+        for (int i = 0; i < threadCount; i++) {
+            futures.add(CompletableFuture.runAsync(() -> { // 리턴값 없는 비동기 실행
+                try {
+                    startLatch.await();
+                    pointService.chargePoint(2L, chargePoint);
+                } catch (Exception e) {
+                    System.out.println("error = " + e);
+                    e.printStackTrace();
+                } finally {
+                    threadLatch.countDown();
+                }
+            }, executorService));
+        }
+
+        startLatch.countDown(); // 모든 스레드 시작
+        threadLatch.await(); // 모두 끝날 때까지 대기
+
+        UserPoint user = userPointTable.selectById(2L);
+
+        Assertions.assertThat(user.point()).isEqualTo(1000L);
     }
 }

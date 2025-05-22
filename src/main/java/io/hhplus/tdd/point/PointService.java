@@ -38,7 +38,7 @@ public class PointService {
      * @param amountPoint
      * @return
      */
-    public UserPoint chargePoint(Long userId, Long amountPoint) {
+    public synchronized UserPoint chargePoint(Long userId, Long amountPoint) {
         UserPoint user = userPointTable.selectById(userId);
         UserPoint updated = user.isValidChargePoint(amountPoint);
         pointHistoryTable.insert(user.id(), amountPoint, TransactionType.CHARGE, System.currentTimeMillis());
