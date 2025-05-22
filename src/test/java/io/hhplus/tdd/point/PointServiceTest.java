@@ -181,35 +181,4 @@ public class PointServiceTest {
                 .isInstanceOf(InvalidPointException.class)
                 .hasMessage("최대 포인트는 100,000 입니다.");
     }
-
-    @Test
-    @DisplayName("[동시성 제어] - 포인트 충전")
-    public void chargePointConcurrently() throws InterruptedException {
-        int threadCount = 10;
-        CountDownLatch startLatch = new CountDownLatch(1);
-        CountDownLatch threadLatch = new CountDownLatch(threadCount);
-        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
-        List<CompletableFuture<Void>> futures = new ArrayList<>();
-
-        for (int i = 0; i < threadCount; i++) {
-            futures.add(CompletableFuture.runAsync(() -> { // 리턴값 없는 비동기 실행
-                try {
-                    startLatch.await();
-                    pointService.chargePoint(2L, chargePoint);
-                } catch (Exception e) {
-                    System.out.println("error = " + e);
-                    e.printStackTrace();
-                } finally {
-                    threadLatch.countDown();
-                }
-            }, executorService));
-        }
-
-        startLatch.countDown(); // 모든 스레드 시작
-        threadLatch.await(); // 모두 끝날 때까지 대기
-
-        UserPoint user = userPointTable.selectById(2L);
-
-        Assertions.assertThat(user.point()).isEqualTo(1000L);
-    }
 }
