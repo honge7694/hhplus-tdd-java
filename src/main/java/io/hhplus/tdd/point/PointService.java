@@ -1,9 +1,8 @@
 package io.hhplus.tdd.point;
 
-import io.hhplus.tdd.ErrorResponse;
 import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
-import io.hhplus.tdd.error.BadRequestException;
+import io.hhplus.tdd.error.InvalidPointException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,18 +14,6 @@ public class PointService {
 
     private final UserPointTable userPointTable;
     private final PointHistoryTable pointHistoryTable;
-
-    /**
-     * User의 포인트를 충전한다.
-     * @param userId
-     * @param point
-     * @return
-     */
-    public UserPoint chargePoint(Long userId, Long point) {
-        UserPoint userPoint = userPointTable.selectById(userId);
-        pointHistoryTable.insert(userPoint.id(), point, TransactionType.CHARGE, System.currentTimeMillis());
-        return userPointTable.insertOrUpdate(userPoint.id(), point);
-    }
 
     /**
      * User의 포인트를 조회한다.
@@ -47,6 +34,18 @@ public class PointService {
     }
 
     /**
+     * User의 포인트를 충전한다.
+     * @param userId
+     * @param point
+     * @return
+     */
+    public UserPoint chargePoint(Long userId, Long point) {
+        UserPoint userPoint = userPointTable.selectById(userId);
+        pointHistoryTable.insert(userPoint.id(), point, TransactionType.CHARGE, System.currentTimeMillis());
+        return userPointTable.insertOrUpdate(userPoint.id(), point);
+    }
+
+    /**
      * 포인트를 사용한다.
      * @param userId
      * @param amountPoint
@@ -54,9 +53,6 @@ public class PointService {
      */
     public UserPoint useUserPoint(Long userId, long amountPoint) {
         UserPoint user = userPointTable.selectById(userId);
-        if (user.point() < amountPoint) {
-            throw new BadRequestException("포인트가 부족합니다.");
-        }
         pointHistoryTable.insert(user.id(), amountPoint, TransactionType.USE, System.currentTimeMillis());
         return userPointTable.insertOrUpdate(user.id(), amountPoint);
     }

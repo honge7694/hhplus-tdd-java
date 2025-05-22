@@ -2,7 +2,7 @@ package io.hhplus.tdd.point;
 
 import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
-import io.hhplus.tdd.error.BadRequestException;
+import io.hhplus.tdd.error.InvalidPointException;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -18,7 +18,6 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.util.Assert.isInstanceOf;
 
 @ExtendWith(MockitoExtension.class)
 public class PointServiceTest {
@@ -158,7 +157,7 @@ public class PointServiceTest {
         // when & then
         Assertions.assertThatThrownBy(() ->
             pointService.useUserPoint(userPoint.id(), 200L))
-                .isInstanceOf(BadRequestException.class)
+                .isInstanceOf(InvalidPointException.class)
                 .hasMessage("포인트가 부족합니다.");
     }
 }
